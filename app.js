@@ -1,13 +1,17 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const routes = require('./routes/routes');
+const {TEMPLATE_MONGDB} = process.env;
 const app = express();
 
 mongoose.Promise = global.Promise;
 if(process.env.NODE_ENV !== 'test') {
-    mongoose.connect(process.env.TEMPLATE_MONGDB, {useNewUrlParser: true, useUnifiedTopology: true});
+    mongoose.connect(TEMPLATE_MONGDB, {useNewUrlParser: true, useUnifiedTopology: true});
+} else {
+    mongoose.connect(TEMPLATE_MONGDB, {useNewUrlParser: true, useUnifiedTopology: true});
 }
 
 
