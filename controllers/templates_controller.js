@@ -19,18 +19,23 @@ module.exports = {
     const capability = filters.capability;
     const industry = filters.industry;
     const department = filters.department;
-    const sort = filters.sort || {title: 1};
-    
+    let sort = filters.sort || {title: 1};
+    sort = JSON.parse(sort);
     let query = {};
     if (!!capability && capability !== "undefined")
       query.capability = capability;
-    if (!!industry && industry !== "undefined" && industry !== 'All') query.industry = industry;
+    if (!!industry && industry !== "undefined" && industry !== 'All') query.tags = industry;
     if (!!department && department !== "undefined" && department !== 'All') query.department = department;
-
+    console.log(sort);
     let sortOrder = {};
-    if(sort === 'asc') sortOrder.title = 1;
-    if(sort === 'desc') sortOrder.title = -1;
-    if(sort === 'dlcounter') sortOrder.dlCounter = -1;
+    if(sort.name === 'asc') sortOrder.title = 1;
+    if(sort.name === 'desc') sortOrder.title = -1;
+    if(sort.name === 'dlcounter') sortOrder.dlCounter = -1;
+    if(sort.name === 'date' && sort.value === true) 
+      sortOrder.dateUploaded = 1;
+    else
+      sortOrder.dateUploaded = -1;
+
     const skip = 11 * (page - 1);
     Template.find(query).sort(sortOrder).skip(skip).limit(11)
     .then((templates) => {
@@ -42,6 +47,19 @@ module.exports = {
         })
         .send(templates);
     }).catch(next);
+    // Template.aggregate([
+    //   {$match: query},
+    //   {$lookup: {
+    //     from: 'partners',
+    //     localField: '_id',
+    //     foreignField: 'templates',
+    //     as: "partner"
+    //   }}
+    // ]).sort(sortOrder).skip(skip).limit(11).then((totalCount) => {
+    //   res
+    //     .status(200)
+    //     .send(totalCount);
+    // }).catch(next);
 
   },
   totalCount(req, res, next) {
@@ -54,7 +72,7 @@ module.exports = {
     let query = {};
     if (!!capability && capability !== "undefined")
       query.capability = capability;
-    if (!!industry && industry !== "undefined" && industry !== 'All') query.industry = industry;
+    if (!!industry && industry !== "undefined" && industry !== 'All') query.tags = industry;
     if (!!department && department !== "undefined" && department !== 'All') query.department = department;
     Template.aggregate([
       {$match: query},

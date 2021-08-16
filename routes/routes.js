@@ -8,11 +8,11 @@ const Convert = require("../models/convert");
 module.exports = (app) => {
   // Template based Routes
   app.get("/api/templates", TemplatesController.index);
-  app.get("/api/templates/:capability/:department/:page/:sort", TemplatesController.getFiltered);
+  app.get("/api/templates/:capability/:industry/:department/:page/:sort", TemplatesController.getFiltered);
   app.get("/api/templates/:id", TemplatesController.getOne);
   app.get("/api/:capability/", TemplatesController.getAllOfType);
   app.get("/api/:capability/:workflowVersion", TemplatesController.getWorkflowVersions);
-  app.get("/totalCount/:capability/:department/:page", TemplatesController.totalCount);
+  app.get("/totalCount/:capability/:industry/:department/:page", TemplatesController.totalCount);
   app.post("/api/templates", TemplatesController.create);
   app.put("/api/templates/:id", TemplatesController.edit);
   app.delete("/api/templates/:id", TemplatesController.delete);
