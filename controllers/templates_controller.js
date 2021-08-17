@@ -22,11 +22,11 @@ module.exports = {
     let sort = filters.sort || {title: 1};
     sort = JSON.parse(sort);
     let query = {};
-    if (!!capability && capability !== "undefined")
+    if (!!capability && capability !== "undefined" && capability !== 'All')
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== 'All') query.tags = industry;
     if (!!department && department !== "undefined" && department !== 'All') query.department = department;
-    console.log(sort);
+    
     let sortOrder = {};
     if(sort.name === 'asc') sortOrder.title = 1;
     if(sort.name === 'desc') sortOrder.title = -1;
@@ -37,29 +37,30 @@ module.exports = {
       sortOrder.dateUploaded = -1;
 
     const skip = 11 * (page - 1);
-    Template.find(query).sort(sortOrder).skip(skip).limit(11)
-    .then((templates) => {
-      res
-        .status(200)
-        .set({
-          "X-Total-Count": templates.length,
-          "total-templates": Template.count(),
-        })
-        .send(templates);
-    }).catch(next);
-    // Template.aggregate([
-    //   {$match: query},
-    //   {$lookup: {
-    //     from: 'partners',
-    //     localField: '_id',
-    //     foreignField: 'templates',
-    //     as: "partner"
-    //   }}
-    // ]).sort(sortOrder).skip(skip).limit(11).then((totalCount) => {
+    // Template.find(query).sort(sortOrder).skip(skip).limit(11)
+    // .then((templates) => {
     //   res
     //     .status(200)
-    //     .send(totalCount);
+    //     .set({
+    //       "X-Total-Count": templates.length,
+    //       "total-templates": Template.count(),
+    //     })
+    //     .send(templates);
     // }).catch(next);
+    Template.aggregate([
+      {$match: query},
+      {$lookup: {
+        from: "partners",
+        localField: "_id",
+        foreignField: "templates",
+        as: "partner"
+      }},
+      { $project : { _id: 1, title: 1, description: 1, capability: 1, workflowVersion: 1, visible: 1, nwcToken: 1, downloadURL: 1, extension: 1, dlCounter: 1, rating: 1,  } }
+    ]).sort(sortOrder).skip(skip).limit(11).then((templates) => {
+      res
+        .status(200)
+        .send(templates);
+    }).catch(next);
 
   },
   totalCount(req, res, next) {
