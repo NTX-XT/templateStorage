@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Template Gallery",
   "main": "index.js",
-  "scripts": {
-    "test": "SET NODE_ENV=test && nodemon --exec \"mocha --recursive -R min\" ",
+  "scripts": {    
     "start": "node index.js"
   },
   "author": "Sean L Fiene",
