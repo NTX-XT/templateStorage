@@ -1,17 +1,18 @@
 const Template = require("../models/template");
 
 module.exports = {
-  index(req, res, next) {        
+  index(req, res, next) {
     Template.find()
-    .then((templates) => {
-      res
-        .status(200)
-        .set({
-          "X-Total-Count": templates.length,
-          "total-templates": Template.count(),
-        })
-        .send(templates);
-    }).catch(next);
+      .then((templates) => {
+        res
+          .status(200)
+          .set({
+            "X-Total-Count": templates.length,
+            "total-templates": Template.count(),
+          })
+          .send(templates);
+      })
+      .catch(next);
   },
   getFiltered(req, res, next) {
     const filters = req.params;
@@ -19,22 +20,23 @@ module.exports = {
     const capability = filters.capability;
     const industry = filters.industry;
     const department = filters.department;
-    let sort = filters.sort || {title: 1};
+    let sort = filters.sort || { title: 1 };
     sort = JSON.parse(sort);
+    console.log(sort);
     let query = {};
-    if (!!capability && capability !== "undefined" && capability !== 'All')
+    if (!!capability && capability !== "undefined" && capability !== "All")
       query.capability = capability;
-    if (!!industry && industry !== "undefined" && industry !== 'All') query.tags = industry;
-    if (!!department && department !== "undefined" && department !== 'All') query.department = department;
-    
+    if (!!industry && industry !== "undefined" && industry !== "All")
+      query.tags = industry;
+    if (!!department && department !== "undefined" && department !== "All")
+      query.department = department;
+
     let sortOrder = {};
-    if(sort.name === 'asc') sortOrder.title = 1;
-    if(sort.name === 'desc') sortOrder.title = -1;
-    if(sort.name === 'dlcounter') sortOrder.dlCounter = -1;
-    if(sort.name === 'date' && sort.value === true) 
-      sortOrder.dateUploaded = 1;
-    else
-      sortOrder.dateUploaded = -1;
+    if (sort.name === "asc") sortOrder.title = 1;
+    if (sort.name === "desc") sortOrder.title = -1;
+    if (sort.name === "dlcounter") sortOrder.dlCounter = -1;
+    if (sort.name === "date" && sort.value === true) sortOrder.dateUploaded = 1;
+    else sortOrder.dateUploaded = -1;
 
     const skip = 11 * (page - 1);
     // Template.find(query).sort(sortOrder).skip(skip).limit(11)
@@ -48,20 +50,38 @@ module.exports = {
     //     .send(templates);
     // }).catch(next);
     Template.aggregate([
-      {$match: query},
-      {$lookup: {
-        from: "partners",
-        localField: "_id",
-        foreignField: "templates",
-        as: "partner"
-      }},
-      { $project : { _id: 1, title: 1, description: 1, capability: 1, workflowVersion: 1, visible: 1, nwcToken: 1, downloadURL: 1, extension: 1, dlCounter: 1, rating: 1,  } }
-    ]).sort(sortOrder).skip(skip).limit(11).then((templates) => {
-      res
-        .status(200)
-        .send(templates);
-    }).catch(next);
-
+      { $match: query },
+      {
+        $lookup: {
+          from: "partners",
+          localField: "_id",
+          foreignField: "templates",
+          as: "partner",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          capability: 1,
+          workflowVersion: 1,
+          visible: 1,
+          nwcToken: 1,
+          downloadURL: 1,
+          extension: 1,
+          dlCounter: 1,
+          rating: 1,
+        },
+      },
+    ])
+      .sort(sortOrder)
+      .skip(skip)
+      .limit(11)
+      .then((templates) => {
+        res.status(200).send(templates);
+      })
+      .catch(next);
   },
   totalCount(req, res, next) {
     const filters = req.params;
@@ -73,20 +93,24 @@ module.exports = {
     let query = {};
     if (!!capability && capability !== "undefined")
       query.capability = capability;
-    if (!!industry && industry !== "undefined" && industry !== 'All') query.tags = industry;
-    if (!!department && department !== "undefined" && department !== 'All') query.department = department;
+    if (!!industry && industry !== "undefined" && industry !== "All")
+      query.tags = industry;
+    if (!!department && department !== "undefined" && department !== "All")
+      query.department = department;
     Template.aggregate([
-      {$match: query},
-      {$group: {
-        _id: null,
-        totalDownloads: { $sum: { $add: [ "$dlCounter" ] } },
-        totalTemplates: { $sum: 1 }
-      }}
-    ]).then((totalCount) => {
-      res
-        .status(200)
-        .send(totalCount);
-    }).catch(next);
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalDownloads: { $sum: { $add: ["$dlCounter"] } },
+          totalTemplates: { $sum: 1 },
+        },
+      },
+    ])
+      .then((totalCount) => {
+        res.status(200).send(totalCount);
+      })
+      .catch(next);
   },
   create(req, res, next) {
     const templateProps = req.body;
