@@ -8,7 +8,7 @@ const {TEMPLATE_MONGDB} = process.env;
 const app = express();
 
 mongoose.Promise = global.Promise;
-if(process.env.NODE_ENV !== 'test') {
+if(process.env.NODE_ENV !== 'Dev') {
     mongoose.connect(TEMPLATE_MONGDB, {useNewUrlParser: true, useUnifiedTopology: true});
 } else {
     mongoose.connect(TEMPLATE_MONGDB, {useNewUrlParser: true, useUnifiedTopology: true});
