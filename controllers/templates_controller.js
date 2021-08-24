@@ -20,10 +20,13 @@ module.exports = {
     const capability = filters.capability;
     const industry = filters.industry;
     const department = filters.department;
+    const title = filters.title;
+
     let sort = filters.sort || { title: 1 };
     sort = JSON.parse(sort);
-    console.log(sort);
     let query = {};
+    if (!!title && title !== "undefined" && title !== "NA")
+      query = { title: { $regex: title } };
     if (!!capability && capability !== "undefined" && capability !== "All")
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== "All")
@@ -31,34 +34,19 @@ module.exports = {
     if (!!department && department !== "undefined" && department !== "All")
       query.department = department;
 
+    console.log(query);
     let sortOrder = {};
     if (sort.name === "asc") sortOrder.title = 1;
     if (sort.name === "desc") sortOrder.title = -1;
     if (sort.name === "dlcounter") sortOrder.dlCounter = -1;
-    if (sort.name === "date" && sort.value === true) sortOrder.dateUploaded = 1;
-    else sortOrder.dateUploaded = -1;
+    if (sort.name === "date" && sort.value === true)
+      sortOrder.dateUploaded = -1;
+    else
+      sortOrder.dateUploaded = 1;
 
     const skip = 11 * (page - 1);
-    // Template.find(query).sort(sortOrder).skip(skip).limit(11)
-    // .then((templates) => {
-    //   res
-    //     .status(200)
-    //     .set({
-    //       "X-Total-Count": templates.length,
-    //       "total-templates": Template.count(),
-    //     })
-    //     .send(templates);
-    // }).catch(next);
     Template.aggregate([
       { $match: query },
-      {
-        $lookup: {
-          from: "partners",
-          localField: "_id",
-          foreignField: "templates",
-          as: "partner",
-        },
-      },
       {
         $project: {
           _id: 1,
@@ -72,6 +60,7 @@ module.exports = {
           extension: 1,
           dlCounter: 1,
           rating: 1,
+          dateUploaded: 1
         },
       },
     ])
