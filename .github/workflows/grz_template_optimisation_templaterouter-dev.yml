@@ -52,5 +52,5 @@ jobs:
       with:
         app-name: 'templaterouter-dev'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_5459718a76894f429c1b71e09eeb8b7e }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_4ac252759116403abee6d9cb620d5978 }}
         package: .
