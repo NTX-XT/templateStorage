@@ -21,12 +21,12 @@ module.exports = {
     const industry = filters.industry;
     const department = filters.department;
     const title = filters.title;
+    const limit = parseInt(filters.limit) || 11;
 
-    let sort = filters.sort || { title: 1 };
-    sort = JSON.parse(sort);
+    let sort = filters.sort || { title: 1 };      
     let query = {};
-    if (!!title && title !== "undefined" && title !== "NA")
-      query = { title: { $regex: title } };
+    if (!!title && title !== "undefined" && title !== "NA")      
+      query = { title: new RegExp(title, 'i') };
     if (!!capability && capability !== "undefined" && capability !== "All")
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== "All")
@@ -34,17 +34,16 @@ module.exports = {
     if (!!department && department !== "undefined" && department !== "All")
       query.department = department;
 
-    console.log(query);
     let sortOrder = {};
-    if (sort.name === "asc") sortOrder.title = 1;
-    if (sort.name === "desc") sortOrder.title = -1;
-    if (sort.name === "dlcounter") sortOrder.dlCounter = -1;
-    if (sort.name === "date" && sort.value === true)
-      sortOrder.dateUploaded = -1;
-    else
-      sortOrder.dateUploaded = 1;
+    if (sort === "tASC") sortOrder.title = 1;
+    if (sort === "tDESC") sortOrder.title = -1;
+    if (sort === "dlASC") sortOrder.dlCounter = 1;
+    if (sort === "dlDESC") sortOrder.dlCounter = -1;
+    if (sort === "dtASC") sortOrder.dateUploaded = 1;
+    if (sort === "dtDESC") sortOrder.dateUploaded = -1;
 
-    const skip = 11 * (page - 1);
+    // console.log(query);
+    const skip = limit * (page - 1);
     Template.aggregate([
       { $match: query },
       {
@@ -66,7 +65,7 @@ module.exports = {
     ])
       .sort(sortOrder)
       .skip(skip)
-      .limit(11)
+      .limit(limit)
       .then((templates) => {
         res.status(200).send(templates);
       })
@@ -78,8 +77,11 @@ module.exports = {
     const capability = filters.capability;
     const industry = filters.industry;
     const department = filters.department;
+    const title = filters.title;
 
     let query = {};
+    if (!!title && title !== "undefined" && title !== "NA")      
+      query = { title: new RegExp(title, 'i') };
     if (!!capability && capability !== "undefined")
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== "All")
@@ -159,4 +161,57 @@ module.exports = {
       )
       .catch(next);
   },
+  replaceAssetLinks(req, res, next) {    
+    Template.find({downloadURL: new RegExp('https://raw.githubusercontent.com/NTX-XT', 'i')}, {_id: 1, downloadURL: 1})
+    .then(async (templates) => {       
+      if(templates.length > 0) {
+        for(var i = 0; i < templates.length; i++) {
+          const replace = await replaceAssetsLink(templates[i]);        
+        }
+      }
+      res.status(200).send({status: 200, message: 'Links Updated!'});      
+    }).catch(next);
+  },
+  replaceImageLinks(req, res, next) {    
+    Template.find({mapImageURL: new RegExp('https://raw.githubusercontent.com/NTX-XT', 'i')}, {_id: 1, mapImageURL: 1})
+    .then(async (templates) => {      
+      if(templates.length > 0) {
+        for(var i = 0; i < templates.length; i++) {
+          const replace = await replaceImagesLinks(templates[i]);        
+        }
+      }
+      res.status(200).send({status: 200, message: 'Links Updated!'});      
+    }).catch(next);
+  }
 };
+
+const replaceAssetsLink = (template) => {
+  return new Promise((resolve, reject) => {    
+    const templateId = template._id;
+    const downloadURL = 'https://ntxtemplatestorage.blob.core.windows.net/assets'+template.downloadURL.replace("https://raw.githubusercontent.com/NTX-XT/Nintex-Process-Gallery/master", "");
+    Template.findByIdAndUpdate({ _id: templateId }, {downloadURL: downloadURL})
+    .then(() => Template.findById({ _id: templateId }))
+    .then((template) => {
+      resolve(200);
+    }).catch(error => {
+      console.log(error);
+      resolve(500);
+    });
+  });
+}
+
+const replaceImagesLinks = (template) => {
+  return new Promise((resolve, reject) => {    
+    const templateId = template._id;
+    const imageName= template.mapImageURL.split("/")[template.mapImageURL.split("/").length - 1];
+    const mapImageURL = 'https://ntxtemplatestorage.blob.core.windows.net/images/'+imageName;      
+    Template.findByIdAndUpdate({ _id: templateId }, {mapImageURL: mapImageURL})
+    .then(() => Template.findById({ _id: templateId }))
+    .then((template) => {
+      resolve(200);
+    }).catch(error => {
+      console.log(error);
+      resolve(500);
+    });
+  });
+}

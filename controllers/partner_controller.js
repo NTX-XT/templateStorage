@@ -2,7 +2,7 @@ const Partner = require("../models/partner");
 
 module.exports = {
   index(req, res, next) {
-    Partner.find({}, { _id: 1, name: 1, email: 1, smallIcon: 1, templates: 1 })
+    Partner.find({isActive: true}, { _id: 1, name: 1, email: 1, smallIcon: 1, templates: 1, isActive: 1 })
       .then((partners) =>
         res.status(200).set({ "X-Total-Count": partners.length }).send(partners)
       )
