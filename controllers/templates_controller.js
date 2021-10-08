@@ -1,14 +1,31 @@
+const { getDateTime } = require("../helpers");
 const Template = require("../models/template");
 
 module.exports = {
   index(req, res, next) {
-    Template.find()
+    const page = req.params.page || 1;
+    let sort = { dateUploaded: -1 }; 
+    const limit = 10;
+    const skip = limit * (page - 1);
+    Template.find({}, {_id: 1, title: 1, description: 1, department: 1, capability: 1, tags: 1}).sort(sort).skip(skip).limit(limit)
+      .then((templates) => {        
+        res
+          .status(200)
+          .set({
+            "X-Total-Count": templates.length            
+          })
+          .send({templates, page});
+      })
+      .catch(next);
+  },
+  getTemplateForSets(req, res, next) {
+    const {limit, offset} = req.params;    
+    Template.find({}, {_id: 1, title: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
       .then((templates) => {
         res
           .status(200)
           .set({
-            "X-Total-Count": templates.length,
-            "total-templates": Template.count(),
+            "X-Total-Count": templates.length            
           })
           .send(templates);
       })
@@ -25,6 +42,7 @@ module.exports = {
 
     let sort = filters.sort || { title: 1 };      
     let query = {};
+    query.visible = true;
     if (!!title && title !== "undefined" && title !== "NA")      
       query = { title: new RegExp(title, 'i') };
     if (!!capability && capability !== "undefined" && capability !== "All")
@@ -35,12 +53,12 @@ module.exports = {
       query.department = department;
 
     let sortOrder = {};
-    if (sort === "tASC") sortOrder.title = 1;
-    if (sort === "tDESC") sortOrder.title = -1;
-    if (sort === "dlASC") sortOrder.dlCounter = 1;
-    if (sort === "dlDESC") sortOrder.dlCounter = -1;
-    if (sort === "dtASC") sortOrder.dateUploaded = 1;
-    if (sort === "dtDESC") sortOrder.dateUploaded = -1;
+    if (sort === "tASC") sortOrder.title = 1; // ASC
+    if (sort === "tDESC") sortOrder.title = -1; // DESC
+    if (sort === "dlASC") sortOrder.dlCounter = 1; //ASC
+    if (sort === "dlDESC") sortOrder.dlCounter = -1; // DESC
+    if (sort === "dtASC") sortOrder.dateUploaded = 1; // ASC
+    if (sort === "dtDESC") sortOrder.dateUploaded = -1; // DESC
 
     // console.log(query);
     const skip = limit * (page - 1);
@@ -82,12 +100,12 @@ module.exports = {
     let query = {};
     if (!!title && title !== "undefined" && title !== "NA")      
       query = { title: new RegExp(title, 'i') };
-    if (!!capability && capability !== "undefined")
+    if (!!capability && capability !== "undefined" && capability !== "NA")
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== "All")
       query.tags = industry;
     if (!!department && department !== "undefined" && department !== "All")
-      query.department = department;
+      query.department = department;    
     Template.aggregate([
       { $match: query },
       {
@@ -98,7 +116,7 @@ module.exports = {
         },
       },
     ])
-      .then((totalCount) => {
+      .then((totalCount) => {        
         res.status(200).send(totalCount);
       })
       .catch(next);
@@ -107,23 +125,23 @@ module.exports = {
     const templateProps = req.body;
 
     Template.create(templateProps)
-      .then((template) => res.send(template))
+      .then((template) => res.send({status: 200, template: template}))
       .catch(next);
   },
   getOne(req, res, next) {
     const templateId = req.params.id;
     Template.findById({ _id: templateId })
-      .then((template) => res.send(template))
+    .then((template) => res.send(template))
       .catch(next);
   },
   edit(req, res, next) {
     // get template id to update
     const templateId = req.params.id;
-    const templateProps = req.body;
+    const templateProps = req.body;    
 
     Template.findByIdAndUpdate({ _id: templateId }, templateProps)
       .then(() => Template.findById({ _id: templateId }))
-      .then((template) => res.send(template))
+      .then((template) => res.send({status: 200, template: template}))
       .catch(next);
   },
   delete(req, res, next) {
@@ -161,7 +179,7 @@ module.exports = {
       )
       .catch(next);
   },
-  replaceAssetLinks(req, res, next) {    
+  replaceAssetLinks(req, res, next) {
     Template.find({downloadURL: new RegExp('https://raw.githubusercontent.com/NTX-XT', 'i')}, {_id: 1, downloadURL: 1})
     .then(async (templates) => {       
       if(templates.length > 0) {
@@ -181,6 +199,22 @@ module.exports = {
         }
       }
       res.status(200).send({status: 200, message: 'Links Updated!'});      
+    }).catch(next);
+  },
+  changeDateFormats(req, res, next) {
+    Template.find({}, {_id: 1, dateUploaded: 1})
+    .then(async (templates) => {      
+      if(templates.length > 0) {
+        for(var i = 0; i < templates.length; i++) {
+          const replace = await changeDateFormat(templates[i]);        
+        }
+      }
+      res.status(200).send({status: 200, message: 'Dates Updated!'});      
+    }).catch(next);
+  },
+  getTemplatesByDate(req, res, next) {
+    Template.find({}, {_id: 1, dateUploaded: 1, dlCounter: 1, capability: 1}).then(dateResult => {
+      res.status(200).send({status: 200, data: dateResult});  
     }).catch(next);
   }
 };
@@ -213,5 +247,23 @@ const replaceImagesLinks = (template) => {
       console.log(error);
       resolve(500);
     });
+  });
+}
+
+const changeDateFormat = (template) => {
+  return new Promise((resolve, reject) => {    
+    const templateId = template._id;    
+    let dateUploaded = getDateTime(template.dateUploaded);
+    dateUploaded = dateUploaded.split(" ")[0];    
+    if(dateUploaded) {
+      Template.findByIdAndUpdate({ _id: templateId }, { dateUploaded: dateUploaded })
+      .then(() => Template.findById({ _id: templateId }))
+      .then((template) => {
+        resolve(200);
+      }).catch(error => {
+        console.log(error);
+        resolve(500);
+      });
+    }
   });
 }

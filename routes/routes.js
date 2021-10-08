@@ -3,21 +3,29 @@ const ImpsController = require("../controllers/imports_controller");
 const CampController = require("../controllers/campaign_controller");
 const ConvertController = require("../controllers/convert_controller");
 const PartnerController = require("../controllers/partner_controller");
+const UsersController = require('../controllers/users_controller');
 const Convert = require("../models/convert");
+const TemplateSetController = require("../controllers/template_set_controller");
 
 module.exports = (app) => {
   // Template based Routes
-  app.get("/api/templates", TemplatesController.index);
+  app.get("/api/alltemplates/:page", TemplatesController.index);
+  app.get("/api/alltemplates/:limit/:offset", TemplatesController.getTemplateForSets);
   app.get("/api/templates/:capability/:industry/:department/:title/:page/:sort/:limit", TemplatesController.getFiltered);
   app.get("/api/templates/:id", TemplatesController.getOne);
   app.get("/api/:capability/", TemplatesController.getAllOfType);
   app.get("/api/:capability/:workflowVersion", TemplatesController.getWorkflowVersions);
   app.get("/totalCount/:capability/:industry/:department/:title/:page", TemplatesController.totalCount);
-  app.post("/api/templates", TemplatesController.create);
+  app.get("/getTemplatesByDate", TemplatesController.getTemplatesByDate);  
+  app.post("/api/templates", TemplatesController.create);  
   app.put("/api/templates/:id", TemplatesController.edit);
   app.put("/replaceLinks", TemplatesController.replaceAssetLinks);
   app.put("/replaceImageLinks", TemplatesController.replaceImageLinks);
+  app.put("/changeDateFormats", TemplatesController.changeDateFormats);
   app.delete("/api/templates/:id", TemplatesController.delete);
+
+  //Template Sets
+  app.post("/api/templateSet", TemplateSetController.create)
 
   //Template Import based Routes
   app.get("/api/imports/all", ImpsController.index);
@@ -45,4 +53,9 @@ module.exports = (app) => {
   app.post("/api/partners/", PartnerController.create);
   app.put("/api/partners/:id", PartnerController.edit);
   app.delete("/api/partners/:id", PartnerController.delete);
+
+  //User based Routes
+  app.get("/api/user/login/:email/:password", UsersController.login);
+  app.post("/api/user/signup/:firstname/:lastname/:email/:password/:confirm_password", UsersController.signup);
+  app.put("/user/reset-password", UsersController.resetPassword);
 };

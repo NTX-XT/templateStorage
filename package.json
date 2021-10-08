@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "Template Gallery",
   "main": "index.js",
-  "scripts": {    
+  "scripts": {
     "start": "node index.js"
   },
   "author": "Sean L Fiene",
   "license": "ISC",
   "dependencies": {
+    "aes256": "^1.1.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
