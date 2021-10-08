@@ -8,7 +8,7 @@ module.exports = {
     const limit = 10;
     const skip = limit * (page - 1);
     Template.find({}, {_id: 1, title: 1, description: 1, department: 1, capability: 1, tags: 1}).sort(sort).skip(skip).limit(limit)
-      .then((templates) => {        
+      .then((templates) => {
         res
           .status(200)
           .set({
