@@ -7,6 +7,10 @@ const TemplateSetSchema = new Schema({
         required: true,
         unique: true
     },
+    templateSetDescription: {
+        type: String,
+        required: true        
+    },
     templatesInSet: {
         type: Array,
         required: true,

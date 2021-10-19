@@ -148,7 +148,7 @@ module.exports = {
     const templateId = req.params.id;
 
     Template.findByIdAndRemove({ _id: templateId })
-      .then((template) => res.status(204).send(template))
+      .then((template) => res.status(200).send({status: 200, template: template}))
       .catch(next);
   },
   getAllOfType(req, res, next) {
