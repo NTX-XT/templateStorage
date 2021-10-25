@@ -2,6 +2,19 @@ const User = require('../models/user');
 const helpers = require('../helpers');
 
 module.exports = {
+    index(req, res, next) {
+        User.find({}, { _id: 1, firstname: 1, lastname: 1, email: 1 })
+        .then((users) =>
+          res.status(200).set({ "X-Total-Count": users.length }).send(users)
+        )
+        .catch(next);
+    },
+    getOne(req, res, next) {
+        const userId = req.params.id;        
+        User.findById({ _id: userId })
+          .then((user) => res.send(user))
+          .catch(next);
+    },
     login(req, res, next) {
         const {email, password} = req.params;
         User.find({email: email}).then(user => {            
@@ -100,5 +113,21 @@ module.exports = {
     },
     resetPassword(req, res, next) {
         console.log(req.body);
+    },
+    edit(req, res, next) {
+        // get partner id to update
+        const userId = req.params.id;
+        const userProps = req.body;    
+    
+        User.findByIdAndUpdate({ _id: userId }, userProps)
+          .then(() => User.findById({ _id: userId }))
+          .then((user) => res.status(200).send({status: 200, data: user}))
+          .catch(next);
+    },
+    delete(req, res, next) {
+        const userId = req.params.id;
+        User.findByIdAndRemove({ _id: userId })
+          .then((user) => res.status(200).send({status: 200, data: user}))
+          .catch(next);
     }
 }

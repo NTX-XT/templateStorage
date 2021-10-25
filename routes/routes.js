@@ -25,7 +25,11 @@ module.exports = (app) => {
   app.delete("/api/templates/:id", TemplatesController.delete);
 
   //Template Sets
-  app.post("/api/templateSet", TemplateSetController.create)
+  app.get("/templateSet/get", TemplateSetController.index);
+  app.get("/templateSet/getOne/:id", TemplateSetController.getOne);
+  app.post("/api/templateSet", TemplateSetController.create);
+  app.put("/api/templateSet/:id", TemplateSetController.edit);
+  app.delete("/api/templateSet/:id", TemplateSetController.delete);
 
   //Template Import based Routes
   app.get("/api/imports/all", ImpsController.index);
@@ -55,7 +59,11 @@ module.exports = (app) => {
   app.delete("/api/partners/:id", PartnerController.delete);
 
   //User based Routes
+  app.get("/user", UsersController.index);
+  app.get("/user/:id", UsersController.getOne);
   app.get("/api/user/login/:email/:password", UsersController.login);
   app.post("/api/user/signup/:firstname/:lastname/:email/:password/:confirm_password", UsersController.signup);
   app.put("/user/reset-password", UsersController.resetPassword);
+  app.put("/api/user/:id", UsersController.edit);
+  app.delete("/api/user/:id", UsersController.delete);
 };

@@ -10,9 +10,8 @@ module.exports = {
   },
   create(req, res, next) {
     const partnerProps = req.body;
-
     Partner.create(partnerProps)
-      .then((partner) => res.send(partner))
+      .then((partner) => res.send({status: 200, partner: partner}))
       .catch(next);
   },
   getOne(req, res, next) {

@@ -11,6 +11,10 @@ const TemplateSchema = new Schema({
     type: String,
     required: true
   },
+  partner: {
+    type: String,
+    required: true
+  },
   title: {
     type: String,
     required: true
@@ -82,6 +86,11 @@ const TemplateSchema = new Schema({
   featured: {
     type: Boolean,
     required: true, 
+    default: false
+  },
+  gated: {
+    type: Boolean,
+    required: true,
     default: false
   },
   tags: {

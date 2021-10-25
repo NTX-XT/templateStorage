@@ -1,6 +1,19 @@
 const TemplateSet = require("../models/templateSet");
 
 module.exports = {
+    index(req, res, next) {
+        let sort = { dateUploaded: -1 }; 
+        TemplateSet.find({}).sort(sort)
+        .then((templateSet) => {
+          res
+            .status(200)
+            .set({
+              "X-Total-Count": templateSet.length            
+            })
+            .send({templateSet});
+        })
+        .catch(next);
+    },
     create(req, res, next) {        
         const templateSetProps = req.body;
         TemplateSet.create(templateSetProps)
@@ -20,5 +33,28 @@ module.exports = {
                 res.status(200).send({status: 500, message: 'Unexpected Error', error: true});
             }
         });
-    }
+    },
+    getOne(req, res, next) {
+        const templateSetId = req.params.id;
+        TemplateSet.findById({ _id: templateSetId })
+        .then((templateSet) => res.send(templateSet))
+          .catch(next);
+    },
+    edit(req, res, next) {
+        // get template id to update
+        const templateSetId = req.params.id;
+        const templateSetProps = req.body;    
+
+        TemplateSet.findByIdAndUpdate({ _id: templateSetId }, templateSetProps)
+            .then(() => TemplateSet.findById({ _id: templateSetId }))
+            .then((templateSet) => res.send({status: 200, templateSet: templateSet}))
+            .catch(next);
+    },
+    delete(req, res, next) {
+        const templateSetId = req.params.id;
+
+        TemplateSet.findByIdAndRemove({ _id: templateSetId })
+            .then((templateSet) => res.status(200).send({status: 200, templateSet: templateSet}))
+            .catch(next);
+    },
 }

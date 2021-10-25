@@ -42,7 +42,7 @@ module.exports = {
 
     let sort = filters.sort || { title: 1 };      
     let query = {};
-    query.visible = true;
+    
     if (!!title && title !== "undefined" && title !== "NA")      
       query = { title: new RegExp(title, 'i') };
     if (!!capability && capability !== "undefined" && capability !== "All")
@@ -51,6 +51,8 @@ module.exports = {
       query.tags = industry;
     if (!!department && department !== "undefined" && department !== "All")
       query.department = department;
+
+    query.visible = true;
 
     let sortOrder = {};
     if (sort === "tASC") sortOrder.title = 1; // ASC
@@ -73,6 +75,7 @@ module.exports = {
           workflowVersion: 1,
           visible: 1,
           nwcToken: 1,
+          gated: 1,
           downloadURL: 1,
           extension: 1,
           dlCounter: 1,
