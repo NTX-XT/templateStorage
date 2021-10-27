@@ -117,10 +117,14 @@ module.exports = {
     edit(req, res, next) {
         // get partner id to update
         const userId = req.params.id;
-        const userProps = req.body;
-        userProps.password = helpers.encrypt(userProps.password);
-        userProps.confirm_password = helpers.encrypt(userProps.confirm_password);
-    
+        const userProps = req.body;        
+        if(!userProps.password) {
+            delete userProps.password;
+            delete userProps.confirm_password;
+        } else {
+            userProps.password = helpers.encrypt(userProps.password);
+            userProps.confirm_password = helpers.encrypt(userProps.confirm_password);
+        }
         User.findByIdAndUpdate({ _id: userId }, userProps)
           .then(() => User.findById({ _id: userId }))
           .then((user) => res.status(200).send({status: 200, data: user}))
