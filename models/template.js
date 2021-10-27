@@ -13,7 +13,7 @@ const TemplateSchema = new Schema({
   },
   partner: {
     type: String,
-    required: true
+    required: false    
   },
   title: {
     type: String,
