@@ -13,6 +13,7 @@ module.exports = (app) => {
   app.get("/api/alltemplates/:limit/:offset", TemplatesController.getTemplateForSets);
   app.get("/api/templates/:capability/:industry/:department/:title/:page/:sort/:limit", TemplatesController.getFiltered);
   app.get("/api/templates/:id", TemplatesController.getOne);
+  app.get("/api/partnerTemplates/:id", TemplatesController.getPartnerTemplates);
   app.get("/api/:capability/", TemplatesController.getAllOfType);
   app.get("/api/:capability/:workflowVersion", TemplatesController.getWorkflowVersions);
   app.get("/totalCount/:capability/:industry/:department/:title/:page", TemplatesController.totalCount);
@@ -22,6 +23,7 @@ module.exports = (app) => {
   app.put("/replaceLinks", TemplatesController.replaceAssetLinks);
   app.put("/replaceImageLinks", TemplatesController.replaceImageLinks);
   app.put("/changeDateFormats", TemplatesController.changeDateFormats);
+  app.put("/addFriendlyURLs", TemplatesController.addFriendlyURLs);
   app.delete("/api/templates/:id", TemplatesController.delete);
 
   //Template Sets

@@ -15,9 +15,18 @@ module.exports = {
       .catch(next);
   },
   getOne(req, res, next) {
-    const partnerId = req.params.id;
-    Partner.findById({ _id: partnerId })
-      .then((partner) => res.send(partner))
+    let partnerId = req.params.id;
+    partnerId = partnerId.replace(/-/g, " ");
+    // Partner.findById({ _id: partnerId })
+    //   .then((partner) => res.send(partner))
+    //   .catch(next);
+    let query = { name: new RegExp(partnerId, 'i') };
+    Partner.aggregate([
+      { $match: query },
+    ])
+      .then((partner) => {        
+        res.status(200).send(partner[0] || {});
+      })
       .catch(next);
   },
   edit(req, res, next) {

@@ -11,6 +11,10 @@ const TemplateSchema = new Schema({
     type: String,
     required: true
   },
+  friendlyUrl: {
+    type: String,
+    required: false
+  },
   partner: {
     type: String,
     required: false    

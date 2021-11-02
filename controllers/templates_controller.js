@@ -7,7 +7,7 @@ module.exports = {
     let sort = { dateUploaded: -1 }; 
     const limit = 10;
     const skip = limit * (page - 1);
-    Template.find({}, {_id: 1, title: 1, description: 1, department: 1, capability: 1, tags: 1}).sort(sort).skip(skip).limit(limit)
+    Template.find({}, {_id: 1, title: 1, description: 1, department: 1, capability: 1, tags: 1, friendlyUrl: 1}).sort(sort).skip(skip).limit(limit)
       .then((templates) => {
         res
           .status(200)
@@ -19,8 +19,8 @@ module.exports = {
       .catch(next);
   },
   getTemplateForSets(req, res, next) {
-    const {limit, offset} = req.params;    
-    Template.find({}, {_id: 1, title: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
+    const {limit, offset} = req.params;
+    Template.find({}, {_id: 1, title: 1, friendlyUrl: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
       .then((templates) => {
         res
           .status(200)
@@ -38,13 +38,13 @@ module.exports = {
     const industry = filters.industry;
     const department = filters.department;
     const title = filters.title;
-    const limit = parseInt(filters.limit) || 11;
+    const limit = parseInt(filters.limit) || 20;
 
     let sort = filters.sort || { title: 1 };      
     let query = {};
     
     if (!!title && title !== "undefined" && title !== "NA")      
-      query = { title: new RegExp(title, 'i') };
+      query = { title: new RegExp(title, 'i') };      
     if (!!capability && capability !== "undefined" && capability !== "All")
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== "All")
@@ -80,7 +80,8 @@ module.exports = {
           extension: 1,
           dlCounter: 1,
           rating: 1,
-          dateUploaded: 1
+          dateUploaded: 1,
+          friendlyUrl: 1
         },
       },
     ])
@@ -126,26 +127,49 @@ module.exports = {
   },
   create(req, res, next) {
     const templateProps = req.body;
-
-    Template.create(templateProps)
-      .then((template) => res.send({status: 200, template: template}))
-      .catch(next);
+    const {friendlyUrl} = templateProps;    
+    Template.find({friendlyUrl: friendlyUrl}).then(template => {
+      console.log(template);
+      if(template.length > 0) {
+        res.send({status: 1062, template: template})
+      } else {
+        Template.create(templateProps)
+        .then((template) => res.send({status: 200, template: template}))
+        .catch(next);
+      }
+    });    
   },
   getOne(req, res, next) {
-    const templateId = req.params.id;
-    Template.findById({ _id: templateId })
-    .then((template) => res.send(template))
-      .catch(next);
+    const friendlyUrl = req.params.id;
+    Template.find({ friendlyUrl: friendlyUrl })
+    .then((template) => {
+      res.send(template[0] || {});
+    }).catch(next);
+  },
+  getPartnerTemplates(req, res, next) {
+    const id = req.params.id;    
+    let sort = { title: 1 }; 
+    Template.find({ partner: id }).sort(sort)
+    .then((template) => res.send(template)).catch(next);
   },
   edit(req, res, next) {
     // get template id to update
     const templateId = req.params.id;
     const templateProps = req.body;    
+    const {friendlyUrl} = templateProps;    
+    Template.find({friendlyUrl: friendlyUrl}).then(template => {
+      console.log(template);
+      if(template.length > 0) {        
+        if(template[0]._id.toString() === templateId.toString()) {
+          updateTemplate(req, res, next, templateId, templateProps);
+        } else {
+          res.send({status: 1062, template: template})
+        }
+      } else {
+        updateTemplate(req, res, next, templateId, templateProps);
+      }
 
-    Template.findByIdAndUpdate({ _id: templateId }, templateProps)
-      .then(() => Template.findById({ _id: templateId }))
-      .then((template) => res.send({status: 200, template: template}))
-      .catch(next);
+    });      
   },
   delete(req, res, next) {
     const templateId = req.params.id;
@@ -215,6 +239,17 @@ module.exports = {
       res.status(200).send({status: 200, message: 'Dates Updated!'});      
     }).catch(next);
   },
+  addFriendlyURLs(req, res, next) {
+    Template.find({}, {_id: 1, title: 1})
+    .then(async (templates) => {      
+      if(templates.length > 0) {
+        for(var i = 0; i < templates.length; i++) {
+          const replace = await addFriendlyURL(templates[i]);        
+        }
+      }
+      res.status(200).send({status: 200, message: 'URLs Updated!'});      
+    }).catch(next);
+  },
   getTemplatesByDate(req, res, next) {
     Template.find({}, {_id: 1, dateUploaded: 1, dlCounter: 1, capability: 1}).then(dateResult => {
       res.status(200).send({status: 200, data: dateResult});  
@@ -269,4 +304,29 @@ const changeDateFormat = (template) => {
       });
     }
   });
+}
+
+const addFriendlyURL = (template) => {  
+  return new Promise((resolve, reject) => {
+    const templateId = template._id;
+    let title = template.title;
+    if(title) {
+      let friendlyUrl = title.trim().replace(/ /g, "-").toLowerCase();      
+      Template.findByIdAndUpdate({ _id: templateId }, { title: title.trim(), friendlyUrl: friendlyUrl.trim() })
+      .then(() => Template.findById({ _id: templateId }))
+      .then((template) => {
+        resolve(200);
+      }).catch(error => {
+        console.log(error);
+        resolve(500);
+      });
+    }
+  });
+}
+
+const updateTemplate = (req, res, next, templateId, templateProps) => {
+  Template.findByIdAndUpdate({ _id: templateId }, templateProps)
+  .then(() => Template.findById({ _id: templateId }))
+  .then((template) => res.send({status: 200, template: template}))
+  .catch(next);
 }
