@@ -140,10 +140,13 @@ module.exports = {
   },
   getOne(req, res, next) {
     const friendlyUrl = req.params.id;
-    Template.find({ friendlyUrl: friendlyUrl })
-    .then((template) => {
+    Template.find({ friendlyUrl: friendlyUrl }).populate("partner").exec((err, template) => {
+      if(err) {
+        next();
+        return;
+      }
       res.send(template[0] || {});
-    }).catch(next);
+    })
   },
   getPartnerTemplates(req, res, next) {
     const id = req.params.id;    
