@@ -20,7 +20,7 @@ module.exports = {
   },
   getTemplateForSets(req, res, next) {
     const {limit, offset} = req.params;
-    Template.find({}, {_id: 1, title: 1, friendlyUrl: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
+    Template.find({}, {_id: 1, title: 1, friendlyUrl: 1, capability: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
       .then((templates) => {
         res
           .status(200)
@@ -40,11 +40,11 @@ module.exports = {
     const title = filters.title;
     const limit = parseInt(filters.limit) || 20;
 
-    let sort = filters.sort || { title: 1 };      
+    let sort = filters.sort || { title: 1 };
     let query = {};
     
     if (!!title && title !== "undefined" && title !== "NA")      
-      query = { title: new RegExp(title, 'i') };      
+      query = { title: new RegExp(title, 'i') };
     if (!!capability && capability !== "undefined" && capability !== "All")
       query.capability = capability;
     if (!!industry && industry !== "undefined" && industry !== "All")
@@ -63,7 +63,7 @@ module.exports = {
     if (sort === "dtDESC") sortOrder.dateUploaded = -1; // DESC
 
     // console.log(query);
-    const skip = limit * (page - 1);
+    const skip = limit * (page - 1);    
     Template.aggregate([
       { $match: query },
       {
@@ -86,8 +86,7 @@ module.exports = {
       },
     ])
       .sort(sortOrder)
-      .skip(skip)
-      .limit(limit)
+      .limit(page * limit)
       .then((templates) => {
         res.status(200).send(templates);
       })
@@ -251,9 +250,13 @@ module.exports = {
     }).catch(next);
   },
   getTemplatesByDate(req, res, next) {
-    Template.find({}, {_id: 1, dateUploaded: 1, dlCounter: 1, capability: 1}).then(dateResult => {
+    Template.find({}, {_id: 1, dateUploaded: 1, dlCounter: 1, capability: 1, partner: 1}).populate("partner").exec((err, dateResult) => {
+      if(err) {
+        next();
+        return;
+      }
       res.status(200).send({status: 200, data: dateResult});  
-    }).catch(next);
+    });
   }
 };
 
