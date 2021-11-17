@@ -21,6 +21,8 @@ app.use(cors({
     exposedHeaders: ['X-Total-Count'],
     origin: "*"
 }));
+app.use(express.static(__dirname + '/uploads'));
+app.use('/uploads', express.static('uploads'));
 
 // app.use(function(req, res, next) {
 //     res.header("Access-Control-Allow-Origin", "*");

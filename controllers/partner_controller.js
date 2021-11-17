@@ -24,10 +24,10 @@ module.exports = {
     Partner.aggregate([
       { $match: query },
     ])
-      .then((partner) => {        
-        res.status(200).send(partner[0] || {});
-      })
-      .catch(next);
+    .then((partner) => {        
+      res.status(200).send(partner[0] || {});
+    })
+    .catch(next);
   },
   edit(req, res, next) {
     // get partner id to update

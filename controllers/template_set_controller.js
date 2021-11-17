@@ -40,6 +40,18 @@ module.exports = {
         .then((templateSet) => res.send(templateSet))
           .catch(next);
     },
+    getOneByName(req, res, next) {
+        let templateSetId = req.params.id;
+        templateSetId = templateSetId.replace(/-/g, " ");        
+        let query = { templateSetTitle: new RegExp(templateSetId, 'i') };
+        TemplateSet.aggregate([
+            { $match: query }
+        ])
+        .then((ts) => {        
+            res.status(200).send(ts[0] || {});
+        })
+        .catch(next);
+    },
     edit(req, res, next) {
         // get template id to update
         const templateSetId = req.params.id;

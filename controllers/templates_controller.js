@@ -20,7 +20,7 @@ module.exports = {
   },
   getTemplateForSets(req, res, next) {
     const {limit, offset} = req.params;
-    Template.find({}, {_id: 1, title: 1, friendlyUrl: 1, capability: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
+    Template.find({}, {_id: 1, title: 1, friendlyUrl: 1, capability: 1, dlCounter: 1, description: 1}).skip(parseInt(offset)).limit(parseInt(limit) !== 0 && parseInt(limit))
       .then((templates) => {
         res
           .status(200)
@@ -53,7 +53,7 @@ module.exports = {
       query.department = department;
 
     query.visible = true;
-
+    
     let sortOrder = {};
     if (sort === "tASC") sortOrder.title = 1; // ASC
     if (sort === "tDESC") sortOrder.title = -1; // DESC
@@ -81,7 +81,10 @@ module.exports = {
           dlCounter: 1,
           rating: 1,
           dateUploaded: 1,
-          friendlyUrl: 1
+          friendlyUrl: 1,
+          partner: 1,
+          department: 1,
+          tags: 1
         },
       },
     ])
@@ -127,8 +130,7 @@ module.exports = {
   create(req, res, next) {
     const templateProps = req.body;
     const {friendlyUrl} = templateProps;    
-    Template.find({friendlyUrl: friendlyUrl}).then(template => {
-      console.log(template);
+    Template.find({friendlyUrl: friendlyUrl}).then(template => {      
       if(template.length > 0) {
         res.send({status: 1062, template: template})
       } else {
@@ -146,7 +148,41 @@ module.exports = {
         return;
       }
       res.send(template[0] || {});
-    })
+    });
+  },
+  search(req, res, next) {
+    let query = {};
+    let searchTerm = req.params.search;
+    if(searchTerm === "NA") searchTerm = "";  
+    query = { title: new RegExp(searchTerm, 'i') };
+    query.visible = true;
+    let sortOrder = {title: 1};
+    Template.aggregate([
+      { $match: query },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          capability: 1,
+          workflowVersion: 1,
+          visible: 1,
+          nwcToken: 1,
+          gated: 1,
+          downloadURL: 1,
+          extension: 1,
+          dlCounter: 1,
+          rating: 1,
+          dateUploaded: 1,
+          friendlyUrl: 1,
+          partner: 1,
+          department: 1,
+          tags: 1
+        },
+      },
+    ]).sort(sortOrder).then(searchedTemplates => {            
+      res.send(searchedTemplates);
+    }).catch(next);
   },
   getPartnerTemplates(req, res, next) {
     const id = req.params.id;    
@@ -159,8 +195,7 @@ module.exports = {
     const templateId = req.params.id;
     const templateProps = req.body;    
     const {friendlyUrl} = templateProps;    
-    Template.find({friendlyUrl: friendlyUrl}).then(template => {
-      console.log(template);
+    Template.find({friendlyUrl: friendlyUrl}).then(template => {      
       if(template.length > 0) {        
         if(template[0]._id.toString() === templateId.toString()) {
           updateTemplate(req, res, next, templateId, templateProps);
