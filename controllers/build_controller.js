@@ -2,6 +2,7 @@ const fs = require('fs');
 const md2json = require('md-2-json');
 const axios = require('axios');
 const BuildVersion = require('../models/buildVersion');
+const DB = require("../config/connection");
 module.exports = {
     createBuild(req, res, next){
         fs.readFile('./build.md', "utf-8", async function (err, content) {                   
@@ -58,5 +59,26 @@ module.exports = {
           res.status(200).send({status: 200, data: builds})
         )
         .catch(next);
-    }
+    },
+    mongoBuildToMysql(req, res, next) {
+        const buildForMysql = [];
+        BuildVersion.find().then(builds => {          
+          for(var i=0; i<builds.length;i++) {
+            const build = builds[i];
+            const datetime = (new Date().toLocaleString()).replace(/\//g, "-");
+            let [date, time] = datetime.split(", ");            
+            date = date.split("-")[2] + "-" + date.split("-")[1] + "-" + date.split("-")[0];
+            buildForMysql.push(new Array(Number(build.version), date + " " + time, build._id));
+          }
+          DB.query(`INSERT INTO build_versions(version, date, mongo_build_id) VALUES ? ON DUPLICATE KEY UPDATE mongo_build_id = mongo_build_id`, [buildForMysql], (error, insertResponse) => {
+            if(error) {
+              res.send({status: 500, message: error});
+              console.log("Insert Error is ", error);
+              return;
+            }
+            res.send({status: 200, message: 'Success'});
+            console.log(insertResponse);
+          });
+        })
+      }
 }

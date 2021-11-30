@@ -1,4 +1,5 @@
 const { getDateTime } = require("../helpers");
+const DB = require("../config/connection");
 const Template = require("../models/template");
 
 module.exports = {
@@ -142,7 +143,26 @@ module.exports = {
   },
   getOne(req, res, next) {
     const friendlyUrl = req.params.id;
-    Template.find({ friendlyUrl: friendlyUrl }).populate("partner").exec((err, template) => {
+    const query = { friendlyUrl: new RegExp(friendlyUrl, "i") };
+    Template.aggregate([
+      { $match: query },
+      {
+        '$lookup': {
+          //searching collection name
+          'from': 'partners',
+          //setting variable [searchId] where your string converted to ObjectId
+          'let': {"searchId": {$toObjectId: "$_id"}}, 
+          //search query with our [searchId] value
+          "pipeline":[
+            //searching [searchId] value equals your field [_id]
+            {"$match": {"$expr":[ {"partner": "$$searchId"}]}},
+            //projecting only fields you reaaly need, otherwise you will store all - huge data loads
+            {"$project":{"_id": 1, "name": 1}}
+          ],
+          'as': 'allPartners'
+        }
+      }
+    ]).exec((err, template) => {
       if(err) {
         next();
         return;
@@ -184,15 +204,18 @@ module.exports = {
       res.send(searchedTemplates);
     }).catch(next);
   },
-  getPartnerTemplates(req, res, next) {
-    const id = req.params.id;    
-    let sort = { title: 1 }; 
-    Template.find({ partner: id }).sort(sort)
+  getPartnerTemplates(req, res, next) {    
+    const id = req.params.id;
+    let query = { partner: new RegExp(id, 'i') };
+    let sort = { title: 1 };
+    Template.aggregate([
+      { $match: query }
+    ]).sort(sort)
     .then((template) => res.send(template)).catch(next);
   },
   edit(req, res, next) {
     // get template id to update
-    const templateId = req.params.id;
+    const templateId = req.params.id;    
     const templateProps = req.body;    
     const {friendlyUrl} = templateProps;    
     Template.find({friendlyUrl: friendlyUrl}).then(template => {      
@@ -295,6 +318,53 @@ module.exports = {
       }
       res.status(200).send({status: 200, data: dateResult});  
     });
+  },
+  mongoTemplatesToMysql(req, res, next) {
+    const templateForMysql = [];
+    Template.find().then(templates => {
+      console.log(templates.length);
+      for(var i=0; i<templates.length;i++) {
+        const data = templates[i];
+        templateForMysql.push(new Array(data.title, data.visible, data.workflowVersion, data.dlCounter, data.language, data.department, data.capability, data.description, data.templateContent, data.cost, data.mapImageURL, data.downloadURL, data.githubID, data.authorName, data.authorEmail, 1, data.audience, data.featured, data.rating, data.extension, data.componentWorkflow, data.friendlyUrl, data.isGated || 0, 1, 0, data._id));
+      }
+      DB.query(`INSERT INTO templates(title, is_visible, work_flow_version, dl_counter, language, department, capability, description, content, cost, map_image_url, download_url, git_hub_id, author_name, author_email, is_active, audience, is_featured, rating, extension, component_work_flow, friendly_url, is_gated, created_by, updated_by, mongo_template_id) VALUES ? ON DUPLICATE KEY UPDATE mongo_template_id = mongo_template_id`, [templateForMysql], (error, insertResponse) => {
+        if(error) {
+          res.send({status: 500, message: error});
+          console.log("Insert Error is ", error);
+          return;
+        }
+        res.send({status: 200, message: 'Success'});
+        console.log(insertResponse);
+      });
+    })
+  },
+  mongoIndustriesToMysql(req, res, next) {
+    Template.find({}, {tags: 1}).then(templates => {      
+      for (var i=0; i<templates.length; i++) {        
+        const industry = [];
+        if (templates[i].tags && templates[i].tags.length > 0) {                  
+          for (var j=0; j<templates[i].tags.length; j++) {          
+            industry.push(new Array(templates[i].tags[j], templates[i]._id, 1 ,0));
+          }            
+          DB.query(`INSERT INTO industry_assignment(industry, template_id, created_by, updated_by) VALUES ?`, [industry], (error, insertResponse) => {          
+            console.log(`Batch inserted successfully: ${i}.`);
+          });
+        }
+      }
+      res.send({ status: 200, message: 'Industries inserted' });
+    });
+  },
+  uniqueIndustry(req, res, next) {
+    const industry = [];
+    Template.find({}, {tags: 1}).then(templates => {      
+      for(var i=0; i<templates.length;i++) {
+        for(var j=0; j<templates[i].tags.length; j++) {
+          industry.push(templates[i].tags[j]);
+        }
+      }      
+      const uniqueIndustries = new Set([...industry]);
+      console.log(uniqueIndustries);
+    })
   }
 };
 
@@ -365,7 +435,7 @@ const addFriendlyURL = (template) => {
   });
 }
 
-const updateTemplate = (req, res, next, templateId, templateProps) => {
+const updateTemplate = (req, res, next, templateId, templateProps) => {  
   Template.findByIdAndUpdate({ _id: templateId }, templateProps)
   .then(() => Template.findById({ _id: templateId }))
   .then((template) => res.send({status: 200, template: template}))

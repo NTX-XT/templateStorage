@@ -35,6 +35,5 @@ module.exports = {
     Campaign.findByIdAndRemove({ _id: campaignId })
       .then(campaign => res.status(204).send(campaign))
       .catch(next);
-  }
-
+  },
 };

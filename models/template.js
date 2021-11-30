@@ -15,9 +15,10 @@ const TemplateSchema = new Schema({
     type: String,
     required: false
   },
-  partner: [{
-    type: Schema.Types.ObjectId, ref: "partner" 
-  }],
+  partner: {
+    type: String, 
+    required: true
+  },
   title: {
     type: String,
     required: true

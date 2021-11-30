@@ -66,8 +66,11 @@ module.exports = (app) => {
   app.get("/api/:capability/", TemplatesController.getAllOfType);
   app.get("/api/:capability/:workflowVersion", TemplatesController.getWorkflowVersions);
   app.get("/totalCount/:capability/:industry/:department/:title/:page", TemplatesController.totalCount);
+  app.get("/uniqueIndustry", TemplatesController.uniqueIndustry);
   app.get("/getTemplatesByDate", TemplatesController.getTemplatesByDate);  
   app.post("/api/templates", TemplatesController.create);  
+  app.post("/mongoTemplatesToMysql", TemplatesController.mongoTemplatesToMysql);
+  app.post("/mongoIndustriesToMysql", TemplatesController.mongoIndustriesToMysql);
   app.put("/api/templates/:id", TemplatesController.edit);
   app.put("/replaceLinks", TemplatesController.replaceAssetLinks);
   app.put("/replaceImageLinks", TemplatesController.replaceImageLinks);
@@ -87,6 +90,7 @@ module.exports = (app) => {
   app.get("/api/imports/all", ImpsController.index);
   app.get("/api/imps/:id", ImpsController.getOne);
   app.post("/api/imps/", ImpsController.create);
+  app.post("/mongoImportsToMysql", ImpsController.mongoImportsToMysql);
   app.put("/api/imps/:id", ImpsController.edit);
   app.delete("/api/imps/:id", ImpsController.delete);
 
@@ -107,6 +111,7 @@ module.exports = (app) => {
   app.get("/v1/api/partners", PartnerController.index);
   app.get("/v1/api/partners/:id", PartnerController.getOne);
   app.post("/api/partners/", PartnerController.create);
+  app.post("/mongoPartnersToMysql", PartnerController.mongoPartnersToMysql);
   app.put("/api/partners/:id", PartnerController.edit);
   app.delete("/api/partners/:id", PartnerController.delete);
 
@@ -121,6 +126,7 @@ module.exports = (app) => {
 
   // Build Version Routes
   app.post("/generate_build", BuildController.createBuild);
+  app.post("/mongoBuildToMysql", BuildController.mongoBuildToMysql);
   app.get("/get_build_versions", BuildController.getBuilds);
 
   //Capability based Routes

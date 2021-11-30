@@ -1,4 +1,5 @@
 const Imp = require('../models/importCheck');
+const DB = require("../config/connection");
 
 module.exports = {
     index(req, res, next) {
@@ -34,5 +35,23 @@ module.exports = {
         Imp.findByIdAndRemove({_id: impId})
         .then(imp => res.status(204).send(imp))
         .catch(next);
+    },
+    mongoImportsToMysql(req, res, next) {
+        const importsForMysql = [];
+        Imp.find().then(imports => {          
+          for(var i=0; i<imports.length;i++) {
+            const currentImport = imports[i];
+            importsForMysql.push(new Array(currentImport.tenantName, currentImport.templateId, currentImport._id));
+          }
+          DB.query(`INSERT INTO import_checks(tenant_name, template_id, mongo_imports_id) VALUES ? ON DUPLICATE KEY UPDATE mongo_imports_id = mongo_imports_id`, [importsForMysql], (error, insertResponse) => {
+            if(error) {
+              res.send({status: 500, message: error});
+              console.log("Insert Error is ", error);
+              return;
+            }
+            res.send({status: 200, message: 'Success'});
+            console.log(insertResponse);
+          });
+        })
     }
 };
